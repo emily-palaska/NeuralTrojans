@@ -6,6 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
 
+"""
+This file contains the necessary functions and classes to train a ResNet18 model and evaluate it on clean and poisoned data
+The ResNet50 training is very similar
+"""
+
 class ResNet18(nn.Module):
     def __init__(self, num_classes=2):
         super(ResNet18, self).__init__()
@@ -114,7 +119,7 @@ def load_model(path, num_classes=2):
     model = ResNet18(num_classes=num_classes)
     
     # Load the state dictionary from the file
-    state_dict = torch.load(path, map_location=torch.device('cpu'))
+    state_dict = torch.load(path, map_location=torch.device('cpu'), weights_only=True)
     
     # Load the state dictionary into the model
     model.load_state_dict(state_dict)

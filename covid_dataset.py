@@ -7,6 +7,11 @@ from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 import time, random
 
+"""
+This file contains the class designed to load and preprocess the COVID-19 dataset from here
+https://www.kaggle.com/datasets/prashant268/chest-xray-covid19-pneumonia?resource=download
+"""
+
 class CovidDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
@@ -34,7 +39,7 @@ class CovidDataset(Dataset):
         self.img_dims = self.images[0].shape
         end_time = time.time()
         print(f'Covid19 dataset loaded in {end_time - start_time : .2f}s')
-        print(f'Size: images -> {self.images.shape} labels -> {len(self.labels)}\n')
+        print(f'Size: images -> {self.images.shape} labels -> {len(self.labels)}')
     
     def __preprocess__(self):    
         self.images = []
@@ -74,7 +79,7 @@ class CovidDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        # Retrive data
+        # Retrieve data
         try:
             idxp = np.where(self.poisoned_img_inds == idx)[0][0]
             image = self.poisoned_images[idxp]
@@ -86,7 +91,7 @@ class CovidDataset(Dataset):
             poisoned_sample = False
         
         # Normalize with mean and deviation
-        image = (image - self.mean) / (255 * self.std)
+        image = (image - self.mean) / (self.std * 255)
         # Convert to 3-channel PyTorch tensor with CHW format
         if image.shape[2] == 1:
             image = np.tile(image, (1, 1, 3))
@@ -96,13 +101,10 @@ class CovidDataset(Dataset):
         return image, label, poisoned_sample
     
     def __decide_poison_targets__(self):
-        if self.poisoning_ratio >= 0.3:
-            raise ValueError('Poisoning ratio too high')
-
         # Extract indices of poisoned images 
         self.poisoned_img_num = int(self.img_num * self.poisoning_ratio)
         self.poisoned_img_inds = np.random.choice(self.img_num, self.poisoned_img_num, replace=False)
-    
+
     def __add_patch__(self, image: np.ndarray) -> np.ndarray:
         # Get the dimensions of the image and the patch
         img_height, img_width = self.img_dims[:2]
@@ -168,13 +170,14 @@ class CovidDataset(Dataset):
         else:
             raise ValueError('The attack type needs to have a valid name and to be set before the trigger')
             
-    def add_poison(self):
+    def add_poison(self, verbose=True):
         self.poison = True
         self.__decide_poison_targets__()
         self.poisoned_images = []
         
         start_time = time.time()
-        print('\nLaunching attack')
+        if verbose:
+            print(f'\nLaunching {self.attack_type} attack')
         if self.attack_type == 'patch':
             for i, poisoned_ind in enumerate(self.poisoned_img_inds):
                 temp_image = self.images[poisoned_ind]
@@ -205,7 +208,8 @@ class CovidDataset(Dataset):
         else:
             raise ValueError('Incorrect attack type')
         end_time = time.time()
-        print(f'Finished data poisoning in {end_time - start_time : .2f}s')
+        if verbose:
+            print(f'Finished data poisoning in {end_time - start_time : .2f}s\n')
     
     def get_list_of_classes(self):
         return self.conditions.keys()

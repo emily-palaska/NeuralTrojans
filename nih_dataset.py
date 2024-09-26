@@ -8,6 +8,11 @@ from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 import time
 
+"""
+This file contains the class designed to load and preprocess the COVID-19 dataset from here
+https://www.kaggle.com/datasets/nih-chest-xrays/data/data
+"""
+
 class NIHDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
